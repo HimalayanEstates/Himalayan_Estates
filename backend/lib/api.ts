@@ -13,3 +13,9 @@ export function parsePositiveInt(value: string | null, fallback: number, max: nu
   if (!Number.isInteger(parsed) || parsed < 1) return fallback;
   return Math.min(parsed, max);
 }
+
+export function parseOptionalNonNegativeBigInt(value: string | null): { value?: bigint; error?: string } {
+  if (value === null || value.trim() === '') return {};
+  if (!/^\d+$/.test(value.trim())) return { error: 'must be a non-negative integer' };
+  return { value: BigInt(value.trim()) };
+}

@@ -1,6 +1,6 @@
 import { PropertyCategory, PropertyPurpose, ListingStatus, VerificationStatus } from '@prisma/client';
 import { NextRequest } from 'next/server';
-import { apiError, apiSuccess, parsePositiveInt } from '@/lib/api';
+import { apiError, apiSuccess, parseOptionalNonNegativeBigInt, parsePositiveInt } from '@/lib/api';
 import { db } from '@/lib/db';
 
 const categoryValues = new Set(Object.values(PropertyCategory));
@@ -13,14 +13,17 @@ export async function GET(request: NextRequest) {
   const category = params.get('category')?.toUpperCase();
   const purpose = params.get('purpose')?.toUpperCase();
   const verified = params.get('verified') === 'true';
-  const minPrice = Number(params.get('minPrice'));
-  const maxPrice = Number(params.get('maxPrice'));
+  const minPrice = parseOptionalNonNegativeBigInt(params.get('minPrice'));
+  const maxPrice = parseOptionalNonNegativeBigInt(params.get('maxPrice'));
   const query = params.get('q')?.trim();
   const city = params.get('city')?.trim();
   const locality = params.get('locality')?.trim();
 
   if (category && !categoryValues.has(category as PropertyCategory)) return apiError(400, 'INVALID_CATEGORY', 'Unknown property category.');
   if (purpose && !purposeValues.has(purpose as PropertyPurpose)) return apiError(400, 'INVALID_PURPOSE', 'Unknown property purpose.');
+  if (minPrice.error) return apiError(400, 'INVALID_MIN_PRICE', 'minPrice must be a non-negative integer.');
+  if (maxPrice.error) return apiError(400, 'INVALID_MAX_PRICE', 'maxPrice must be a non-negative integer.');
+  if (minPrice.value !== undefined && maxPrice.value !== undefined && minPrice.value > maxPrice.value) return apiError(400, 'INVALID_PRICE_RANGE', 'minPrice cannot exceed maxPrice.');
 
   const where = {
     status: ListingStatus.PUBLISHED,
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
     ...(city ? { city: { contains: city, mode: 'insensitive' as const } } : {}),
     ...(locality ? { locality: { contains: locality, mode: 'insensitive' as const } } : {}),
     ...(query ? { OR: [{ title: { contains: query, mode: 'insensitive' as const } }, { description: { contains: query, mode: 'insensitive' as const } }, { locality: { contains: query, mode: 'insensitive' as const } }, { city: { contains: query, mode: 'insensitive' as const } }] } : {}),
-    ...(!Number.isNaN(minPrice) || !Number.isNaN(maxPrice) ? { priceMinor: { ...(Number.isNaN(minPrice) ? {} : { gte: BigInt(minPrice) }), ...(Number.isNaN(maxPrice) ? {} : { lte: BigInt(maxPrice) }) } } : {}),
+    ...(minPrice.value !== undefined || maxPrice.value !== undefined ? { priceMinor: { ...(minPrice.value === undefined ? {} : { gte: minPrice.value }), ...(maxPrice.value === undefined ? {} : { lte: maxPrice.value }) } } : {}),
   };
 
   const sort = params.get('sort');
