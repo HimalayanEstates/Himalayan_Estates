@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum UserRole {
+  BROKER
+  AGENT
+  ADMINISTRATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum PropertyCategory {
+  HOTEL
+  LAND
+  HOUSE_VILLA
+  APARTMENT
+  COMMERCIAL
+  RESORT
+  FARM
+  OTHER
+}
+
+enum PropertyPurpose {
+  SALE
+  LEASE
+  RENT
+  SALE_OR_LEASE
+}
+
+enum ListingStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  PAUSED
+  ARCHIVED
+}
+
+enum PricingMode {
+  FIXED
+  NEGOTIABLE
+  PRICE_ON_REQUEST
+  RANGE
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MediaModerationState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  VISIT_SCHEDULED
+  WON
+  LOST
+  SPAM
+}
+
+enum ContactMethod {
+  PHONE
+  EMAIL
+  WHATSAPP
+}
+
+model User {
+  id                 String      @id @default(cuid())
+  name               String
+  email              String      @unique
+  phone              String?
+  role               UserRole    @default(AGENT)
+  status             UserStatus  @default(INVITED)
+  passwordHash       String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  assignedProperties Property[]  @relation("AssignedProperties")
+  assignedInquiries  Inquiry[]   @relation("AssignedInquiries")
+  auditEvents        AuditEvent[]
+}
+
+model Property {
+  id                    String             @id @default(cuid())
+  slug                  String             @unique
+  title                 String
+  category              PropertyCategory
+  purpose               PropertyPurpose
+  status                ListingStatus      @default(DRAFT)
+  description           String
+  priceMode             PricingMode
+  priceMinor            BigInt?
+  priceMaxMinor         BigInt?
+  currency              String             @default("INR")
+  areaValue             Decimal?
+  areaUnit              String?
+  address               String?
+  locality              String
+  city                  String
+  region                String?
+  latitude              Decimal?
+  longitude             Decimal?
+  publicLocationPrecise Boolean            @default(false)
+  amenities             String[]
+  attributes            Json?
+  seoTitle              String?
+  seoDescription        String?
+  verificationStatus    VerificationStatus @default(UNVERIFIED)
+  verificationDate      DateTime?
+  verificationSource    String?
+  assignedAgentId       String?
+  publishedAt           DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  deletedAt             DateTime?
+  version               Int                @default(1)
+  assignedAgent         User?              @relation("AssignedProperties", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  media                 PropertyMedia[]
+  inquiries             Inquiry[]
+  auditEvents           AuditEvent[]
+
+  @@index([status, category, purpose, city])
+  @@index([status, locality])
+  @@index([status, priceMinor])
+  @@index([assignedAgentId])
+  @@index([deletedAt])
+}
+
+model PropertyMedia {
+  id                  String               @id @default(cuid())
+  propertyId          String
+  cloudinaryPublicId  String
+  deliveryUrl         String
+  mediaType           MediaType            @default(IMAGE)
+  displayOrder        Int                  @default(0)
+  caption             String?
+  altText             String
+  isCover             Boolean              @default(false)
+  checksum            String?
+  width               Int?
+  height              Int?
+  moderationState     MediaModerationState @default(PENDING)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  property            Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, displayOrder])
+  @@index([propertyId, isCover])
+}
+
+model Inquiry {
+  id               String        @id @default(cuid())
+  propertyId       String?
+  requesterName    String
+  email            String?
+  phone            String?
+  preferredContact ContactMethod
+  message          String
+  visitPreference  String?
+  consentAt        DateTime
+  source           String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  idempotencyKey   String?       @unique
+  listingSnapshot  Json?
+  status           InquiryStatus @default(NEW)
+  assignedAgentId  String?
+  nextFollowUpAt   DateTime?
+  internalNotes    String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  property         Property?     @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  assignedAgent    User?         @relation("AssignedInquiries", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([propertyId, createdAt])
+  @@index([assignedAgentId, status])
+}
+
+model AuditEvent {
+  id         String    @id @default(cuid())
+  actorId    String?
+  propertyId String?
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  reason     String?
+  createdAt  DateTime  @default(now())
+  actor      User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
