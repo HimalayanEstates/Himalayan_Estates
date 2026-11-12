@@ -38,7 +38,7 @@ MagicBricks and 99acres are reference points for interaction patterns, not sourc
 |---|---|---|
 | Visitor | Discover and evaluate properties | Browse, search, save locally or with an account, submit inquiries |
 | Registered buyer/tenant | Track relevant properties and inquiries | Visitor actions plus saved listings and inquiry history |
-| Broker/agent | Manage assigned inventory and leads | Create/edit listings, upload media, update inquiry status |
+| Administrator | Manage all inventory and leads | Create/edit listings, upload media, publish listings, and update inquiry status |
 | Administrator | Govern catalog and operations | Manage all listings/users, approve publication, assign leads, view audit activity |
 
 ## 4. MVP Scope

@@ -11,7 +11,7 @@ Provide a secure, searchable system for a broker to manage heterogeneous propert
 
 ### User and staff
 
-`User`: id, name, email, phone, role, status, last login, created/updated timestamps. Roles are `broker`, `agent`, and `administrator`. Agents can manage assigned listings and leads; administrators can manage all records, publish listings, configure taxonomies, and inspect audit logs.
+`User`: id, name, email, phone, role, last login, created/updated timestamps. The system has one staff role: `administrator`, with access to listings, media, inquiries, publishing, and audit records.
 
 ### Property
 
@@ -43,7 +43,7 @@ Only administrators can publish. Publishing requires title, category, purpose, l
 
 ### Public
 
-- `GET /api/v1/properties` — cursor/page search; filters: purpose, category, locality, price, area/unit, bedrooms/rooms, amenities, verified, availability, assigned broker; sort by relevance, newest, price, or area.
+- `GET /api/v1/properties` — cursor/page search; filters: purpose, category, locality, price, area/unit, bedrooms/rooms, amenities, verified, and availability; sort by relevance, newest, price, or area.
 - `GET /api/v1/properties/{slug}` — published property, public media, safe location, broker contact configuration, and related listings.
 - `GET /api/v1/categories` — active category and filter metadata.
 - `POST /api/v1/inquiries` — create inquiry with idempotency key, consent, spam controls, and listing snapshot.

@@ -22,7 +22,7 @@
 
 ## Staff role
 
-`broker`, `agent`, `administrator`.
+`administrator`.
 
 ## Verification
 

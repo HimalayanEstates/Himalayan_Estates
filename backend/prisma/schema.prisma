@@ -9,8 +9,6 @@ datasource db {
 }
 
 enum UserRole {
-  BROKER
-  AGENT
   ADMINISTRATOR
 }
 
@@ -92,7 +90,7 @@ model User {
   name               String
   email              String      @unique
   phone              String?
-  role               UserRole    @default(AGENT)
+  role               UserRole    @default(ADMINISTRATOR)
   status             UserStatus  @default(INVITED)
   passwordHash       String?
   createdAt          DateTime    @default(now())
