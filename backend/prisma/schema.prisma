@@ -85,6 +85,26 @@ enum ContactMethod {
   WHATSAPP
 }
 
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum CrmActivityType {
+  NOTE
+  CALL
+  EMAIL
+  WHATSAPP
+  STATUS_CHANGE
+  FOLLOW_UP
+}
+
+enum CrmTaskStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                 String      @id @default(cuid())
   name               String
@@ -137,6 +157,7 @@ model Property {
   assignedAgent         User?              @relation("AssignedProperties", fields: [assignedAgentId], references: [id], onDelete: SetNull)
   media                 PropertyMedia[]
   inquiries             Inquiry[]
+  tasks                 CrmTask[]
   auditEvents           AuditEvent[]
 
   @@index([status, category, purpose, city])
@@ -192,10 +213,77 @@ model Inquiry {
   updatedAt        DateTime      @updatedAt
   property         Property?     @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   assignedAgent    User?         @relation("AssignedInquiries", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  activities       InquiryActivity[]
+  tasks            CrmTask[]
 
   @@index([status, createdAt])
   @@index([propertyId, createdAt])
   @@index([assignedAgentId, status])
+}
+
+model InquiryActivity {
+  id         String          @id @default(cuid())
+  inquiryId  String
+  type       CrmActivityType @default(NOTE)
+  body       String
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+  inquiry    Inquiry         @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([inquiryId, createdAt])
+}
+
+model CrmTask {
+  id          String        @id @default(cuid())
+  inquiryId   String?
+  propertyId  String?
+  title       String
+  notes       String?
+  status      CrmTaskStatus @default(OPEN)
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  inquiry     Inquiry?      @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  property    Property?     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([status, dueAt])
+  @@index([inquiryId, status])
+  @@index([propertyId, status])
+}
+
+model SitePage {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  status         ContentStatus @default(DRAFT)
+  sections       Json
+  seoTitle       String?
+  seoDescription String?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+model SiteContent {
+  id          String        @id @default(cuid())
+  contentKey  String        @unique
+  value       Json
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  settingKey  String   @unique
+  value       Json
+  updatedAt   DateTime @updatedAt
 }
 
 model AuditEvent {
