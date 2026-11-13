@@ -21,6 +21,7 @@ export async function PUT(request: NextRequest) {
   const parsed = contentSchema.safeParse(body);
   if (!parsed.success) return apiError(422, 'VALIDATION_ERROR', 'Please correct the content fields.', parsed.error.flatten().fieldErrors);
   const value = parsed.data.value === null ? Prisma.JsonNull : parsed.data.value as Prisma.InputJsonValue;
-  const content = await db.siteContent.upsert({ where: { contentKey: parsed.data.contentKey }, update: { value, status: 'DRAFT', publishedAt: null }, create: { contentKey: parsed.data.contentKey, value, status: 'DRAFT' } });
+  const status = parsed.data.status ?? 'DRAFT';
+  const content = await db.siteContent.upsert({ where: { contentKey: parsed.data.contentKey }, update: { value, status, publishedAt: status === 'PUBLISHED' ? new Date() : null }, create: { contentKey: parsed.data.contentKey, value, status, publishedAt: status === 'PUBLISHED' ? new Date() : null } });
   return apiSuccess({ content: serializeForJson(content) });
 }

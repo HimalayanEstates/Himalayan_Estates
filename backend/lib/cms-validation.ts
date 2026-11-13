@@ -23,3 +23,5 @@ export const activitySchema = z.object({ type: z.nativeEnum(CrmActivityType), bo
 export const taskSchema = z.object({ inquiryId: z.string().cuid().optional().nullable(), propertyId: z.string().cuid().optional().nullable(), title: z.string().trim().min(1).max(200), notes: z.string().trim().max(5000).optional().nullable(), status: z.nativeEnum(CrmTaskStatus).optional(), dueAt: z.string().datetime().optional().nullable() }).superRefine((value, context) => {
   if (!value.inquiryId && !value.propertyId) context.addIssue({ code: z.ZodIssueCode.custom, path: ['inquiryId'], message: 'A task must belong to an inquiry or property.' });
 });
+
+export const taskUpdateSchema = z.object({ title: z.string().trim().min(1).max(200).optional(), notes: z.string().trim().max(5000).optional().nullable(), status: z.nativeEnum(CrmTaskStatus).optional(), dueAt: z.string().datetime().optional().nullable() }).strict();
