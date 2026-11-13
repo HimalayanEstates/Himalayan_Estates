@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   ArrowUpRight,
   Building2,
@@ -17,10 +17,11 @@ import {
   Trees,
   X,
 } from 'lucide-react';
+import { ApiProperty, fetchProperties, formatPrice, formatPropertyMeta, formatPropertyType } from '@/lib/api';
 
 type Intent = 'buy' | 'lease' | 'stay';
 
-type Property = {
+type DisplayProperty = {
   slug: string;
   title: string;
   location: string;
@@ -31,39 +32,25 @@ type Property = {
   featured?: boolean;
 };
 
-const properties: Property[] = [
-  {
-    slug: 'the-cedar-house',
-    title: 'The Cedar House',
-    location: 'Old Manali, Himachal Pradesh',
-    type: 'Boutique hotel',
-    price: '₹4.85 Cr',
-    meta: '12 keys · 1.8 acres',
-    image:
-      'https://images.unsplash.com/photo-1544986581-efac024faf62?auto=format&fit=crop&w=1100&q=85',
-    featured: true,
-  },
-  {
-    slug: 'pine-river-parcel',
-    title: 'Pine & River Parcel',
-    location: 'Solang Valley, Manali',
-    type: 'Riverfront land',
-    price: '₹1.62 Cr',
-    meta: '18,400 sq ft · clear approach',
-    image:
-      'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1100&q=85',
-  },
-  {
-    slug: 'the-orchard-room',
-    title: 'The Orchard Room',
-    location: 'Naggar Road, Manali',
-    type: 'Mountain home',
-    price: '₹2.18 Cr',
-    meta: '3 bed · furnished · valley view',
-    image:
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1100&q=85',
-  },
+const fallbackImages = [
+  'https://images.unsplash.com/photo-1544986581-efac024faf62?auto=format&fit=crop&w=1100&q=85',
+  'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1100&q=85',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1100&q=85',
 ];
+
+function toDisplayProperty(property: ApiProperty, index: number): DisplayProperty {
+  const cover = property.media?.find((media) => media.isCover && media.moderationState === 'APPROVED') ?? property.media?.[0];
+  return {
+    slug: property.slug,
+    title: property.title,
+    location: `${property.locality}, ${property.city}`,
+    type: formatPropertyType(property.category),
+    price: formatPrice(property),
+    meta: formatPropertyMeta(property),
+    image: cover?.deliveryUrl ?? fallbackImages[index % fallbackImages.length],
+    featured: index === 0,
+  };
+}
 
 const categories = [
   { label: 'Hotels & stays', count: '18 properties', icon: Hotel, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=700&q=85' },
@@ -79,18 +66,36 @@ export function PropertyExplorer() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [saved, setSaved] = useState<string[]>([]);
   const [status, setStatus] = useState('');
+  const [properties, setProperties] = useState<DisplayProperty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  const visibleProperties = useMemo(
-    () =>
-      location.trim()
-        ? properties.filter((property) => `${property.title} ${property.location}`.toLowerCase().includes(location.toLowerCase()))
-        : properties,
-    [location],
-  );
+  async function loadProperties(search = '') {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const response = await fetchProperties(search);
+      setProperties(response.items.map(toDisplayProperty));
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Properties could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void loadProperties(); }, []);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const params = new URLSearchParams();
+    if (location.trim()) params.set('q', location.trim());
+    if (intent === 'buy') params.set('purpose', 'SALE');
+    if (intent === 'lease') params.set('purpose', 'LEASE');
+    if (intent === 'stay') params.set('purpose', 'RENT');
+    const categoryValue = category === 'Hotels & stays' ? 'HOTEL' : category === 'Land & acreage' ? 'LAND' : category === 'Homes & villas' ? 'HOUSE_VILLA' : category === 'Commercial' ? 'COMMERCIAL' : '';
+    if (categoryValue) params.set('category', categoryValue);
     setStatus(`Showing ${intent === 'stay' ? 'stays' : intent === 'lease' ? 'lease opportunities' : 'properties'}${location ? ` near ${location}` : ''}.`);
+    void loadProperties(params.toString());
     document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -160,7 +165,7 @@ export function PropertyExplorer() {
 
         <section className="section listings-section" id="properties" aria-labelledby="listings-title">
           <div className="section-heading"><div><p className="eyebrow">THE LATEST EDIT</p><h2 id="listings-title">Recently on our map.</h2></div><div className="listing-nav"><button type="button" aria-label="Previous properties"><ArrowUpRight size={17} className="rotate-left" /></button><button type="button" aria-label="Next properties"><ArrowUpRight size={17} /></button></div></div>
-          {visibleProperties.length ? <div className="listing-grid">{visibleProperties.map((property) => <article className={`property-card ${property.featured ? 'featured-card' : ''}`} key={property.title}><div className="property-image-wrap"><a href={`/properties/${property.slug}`} aria-label={`View ${property.title}`}><img src={property.image} alt={`${property.title}, ${property.type}`} width="1100" height="740" /></a><span className="property-type">{property.type}</span><button className={`save-button ${saved.includes(property.title) ? 'is-saved' : ''}`} type="button" aria-label={`${saved.includes(property.title) ? 'Remove' : 'Save'} ${property.title}`} aria-pressed={saved.includes(property.title)} onClick={() => toggleSaved(property.title)}><Heart size={18} fill={saved.includes(property.title) ? 'currentColor' : 'none'} /></button></div><div className="property-info"><div><h3><a href={`/properties/${property.slug}`}>{property.title}</a></h3><p><MapPin size={13} />{property.location}</p></div><a href={`/properties/${property.slug}`} className="property-arrow" aria-label={`View ${property.title}`}><ArrowUpRight size={18} /></a><div className="property-meta"><strong>{property.price}</strong><span>{property.meta}</span></div></div></article>)}</div> : <div className="empty-state"><Compass size={28} /><h3>Nothing on this trail yet.</h3><p>Try a nearby town or clear the location to see the full collection.</p><button type="button" onClick={() => setLocation('')}>Show all properties</button></div>}
+          {loading ? <div className="empty-state"><Compass size={28} /><h3>Finding the quiet places…</h3><p>Loading the latest Manali collection.</p></div> : loadError ? <div className="empty-state"><Compass size={28} /><h3>The collection is taking a moment.</h3><p>{loadError}</p><button type="button" onClick={() => void loadProperties()}>Try again</button></div> : properties.length ? <div className="listing-grid">{properties.map((property) => <article className={`property-card ${property.featured ? 'featured-card' : ''}`} key={property.title}><div className="property-image-wrap"><a href={`/properties/${property.slug}`} aria-label={`View ${property.title}`}><img src={property.image} alt={`${property.title}, ${property.type}`} width="1100" height="740" /></a><span className="property-type">{property.type}</span><button className={`save-button ${saved.includes(property.title) ? 'is-saved' : ''}`} type="button" aria-label={`${saved.includes(property.title) ? 'Remove' : 'Save'} ${property.title}`} aria-pressed={saved.includes(property.title)} onClick={() => toggleSaved(property.title)}><Heart size={18} fill={saved.includes(property.title) ? 'currentColor' : 'none'} /></button></div><div className="property-info"><div><h3><a href={`/properties/${property.slug}`}>{property.title}</a></h3><p><MapPin size={13} />{property.location}</p></div><a href={`/properties/${property.slug}`} className="property-arrow" aria-label={`View ${property.title}`}><ArrowUpRight size={18} /></a><div className="property-meta"><strong>{property.price}</strong><span>{property.meta}</span></div></div></article>)}</div> : <div className="empty-state"><Compass size={28} /><h3>Nothing on this trail yet.</h3><p>Try a nearby town or clear the location to see the full collection.</p><button type="button" onClick={() => { setLocation(''); void loadProperties(); }}>Show all properties</button></div>}
         </section>
 
         <section className="approach-section" id="approach" aria-labelledby="approach-title">
