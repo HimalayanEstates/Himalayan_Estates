@@ -3,8 +3,11 @@ import { NextRequest } from 'next/server';
 import { apiError, apiSuccess } from '@/lib/api';
 import { db } from '@/lib/db';
 import { inquirySchema } from '@/lib/validation';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  const rateLimited = enforceRateLimit(request, 'inquiry', 10, 15 * 60 * 1000);
+  if (rateLimited) return rateLimited;
   const idempotencyKey = request.headers.get('idempotency-key')?.trim();
   if (!idempotencyKey || idempotencyKey.length > 120) return apiError(400, 'IDEMPOTENCY_KEY_REQUIRED', 'Provide a valid Idempotency-Key header.');
 

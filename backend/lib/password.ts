@@ -1,0 +1,22 @@
+import crypto from 'node:crypto';
+
+const KEY_LENGTH = 64;
+const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 } as const;
+
+export function hashPassword(password: string) {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const hash = crypto.scryptSync(password, salt, KEY_LENGTH, SCRYPT_OPTIONS).toString('base64url');
+  return `scrypt$${salt}$${hash}`;
+}
+
+export function verifyPassword(password: string, encoded: string) {
+  const [algorithm, salt, expectedEncoded] = encoded.split('$');
+  if (algorithm !== 'scrypt' || !salt || !expectedEncoded) return false;
+  try {
+    const expected = Buffer.from(expectedEncoded, 'base64url');
+    const actual = crypto.scryptSync(password, salt, KEY_LENGTH, SCRYPT_OPTIONS);
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+  } catch {
+    return false;
+  }
+}

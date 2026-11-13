@@ -8,6 +8,9 @@ These are the implemented MVP contracts under `/api/v1`.
 | GET | `/api/v1/properties/:slug` | Public | Return one published listing |
 | POST | `/api/v1/inquiries` | Public | Validate and create a property or general inquiry |
 | GET | `/api/v1/categories` | Public | Return active categories and location metadata |
+| POST | `/api/v1/auth/sign-in` | Public | Create secure administrator session |
+| POST | `/api/v1/auth/sign-out` | Session | Revoke administrator session cookie |
+| POST | `/api/v1/auth/refresh` | Session | Rotate an active administrator session |
 | GET/POST | `/api/v1/admin/properties` | Staff key | List or create draft listings |
 | GET/PATCH/DELETE | `/api/v1/admin/properties/:id` | Staff key | Inspect, update, or archive a listing |
 | POST | `/api/v1/admin/properties/:id/:action` | Staff key | Submit review, publish, pause, or archive |
