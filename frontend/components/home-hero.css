@@ -1,0 +1,21 @@
+.home-hero .hero-content { animation: none; }
+.home-hero .hero-slide-photo { opacity: 0; transform: none; animation: none; transition: opacity 600ms ease-in-out; }
+.home-hero .hero-slide-photo.is-active { opacity: 1; animation: home-hero-drift 8s linear both; }
+.home-hero[data-running='false'] .hero-slide-photo.is-active { animation-play-state: paused; }
+.home-hero-copy { min-height: 260px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.home-hero-copy h1 { font-size: clamp(42px, 6vw, 84px); margin-bottom: 24px; }
+.home-hero-copy>p { color: var(--paper); font-size: 15px; max-width: 850px; }
+.home-hero-copy .hero-link { flex-shrink: 0; }
+.home-hero-copy.is-changing { animation: home-hero-copy-in 450ms var(--ease) both; }
+.home-hero-controls { position: relative; display: flex; justify-content: center; margin-top: 18px; }
+.home-hero-controls>div { display: flex; gap: 8px; }
+.home-hero-controls>div>button { display: grid; align-items: center; width: 38px; min-height: 28px; padding: 10px 0; background: transparent; border: 0; }
+.home-hero-controls button>span { display: block; height: 2px; background: oklch(90% .02 85 / .4); transition: background 160ms; }
+.home-hero-controls button[aria-pressed='true']>span { background: var(--gold); }
+.hero-rotation-control { position: absolute; right: 0; top: 100%; border: 1px solid var(--gold); background: var(--pine); color: var(--paper); min-height: 44px; padding: 10px 14px; font-size: 11px; z-index: 2; }
+.hero-rotation-control:not(:focus-visible) { width: 1px; height: 1px; min-height: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@keyframes home-hero-drift { from { transform: scale(1); } to { transform: scale(1.035) translateX(-.4%); } }
+@keyframes home-hero-copy-in { from { opacity: .15; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media(max-width:760px) { .home-hero-copy { min-height: 340px; } .home-hero-copy h1 { font-size: 43px; } .home-hero-copy>p { font-size: 14px; line-height: 1.8; } .home-hero .hero-slide-photo.is-active { animation: none; transform: none; } .home-hero-copy.is-changing { animation-name: home-hero-mobile-copy-in; } }
+@keyframes home-hero-mobile-copy-in { from { opacity: .3; } to { opacity: 1; } }
+@media(prefers-reduced-motion:reduce) { .home-hero .hero-slide-photo, .home-hero .hero-slide-photo.is-active, .home-hero-copy.is-changing { animation: none; transform: none; transition: none; } }

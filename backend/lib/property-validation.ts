@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PropertyCategory, PropertyPurpose, PricingMode, ListingStatus, VerificationStatus } from '@prisma/client';
+import { PropertyCategory, PropertyPurpose, PricingMode, VerificationStatus } from '@prisma/client';
 
 const optionalText = (max: number) => z.string().trim().max(max).optional().nullable();
 
@@ -8,7 +8,7 @@ export const propertyInputSchema = z.object({
   title: z.string().trim().min(3).max(180),
   category: z.nativeEnum(PropertyCategory),
   purpose: z.nativeEnum(PropertyPurpose),
-  status: z.nativeEnum(ListingStatus).optional(),
+  status: z.never().optional(),
   description: z.string().trim().min(20).max(12000),
   priceMode: z.nativeEnum(PricingMode),
   priceMinor: z.string().regex(/^\d+$/).optional().nullable(),
@@ -24,7 +24,7 @@ export const propertyInputSchema = z.object({
   longitude: z.number().finite().min(-180).max(180).optional().nullable(),
   publicLocationPrecise: z.boolean().default(false),
   amenities: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
-  attributes: z.record(z.unknown()).optional().nullable(),
+  attributes: z.record(z.string(), z.unknown()).optional().nullable(),
   seoTitle: optionalText(180),
   seoDescription: optionalText(320),
   verificationStatus: z.nativeEnum(VerificationStatus).optional(),

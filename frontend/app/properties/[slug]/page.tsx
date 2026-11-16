@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'Explore a curated Manali property opportunity with Himalayan Estates.',
 };
 
-export default function PropertyDetailPage({ params }: { params: { slug: string } }) {
-  return <PropertyDetail slug={params.slug} />;
+export default async function PropertyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  return <PropertyDetail slug={slug} />;
 }

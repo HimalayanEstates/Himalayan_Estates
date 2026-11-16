@@ -6,14 +6,14 @@ import { taskSchema } from '@/lib/cms-validation';
 import { serializeForJson } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   const tasks = await db.crmTask.findMany({ orderBy: [{ status: 'asc' }, { dueAt: 'asc' }], include: { inquiry: { select: { id: true, requesterName: true, status: true } }, property: { select: { id: true, title: true, slug: true } } } });
   return apiSuccess({ tasks: serializeForJson(tasks) });
 }
 
 export async function POST(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   let body: unknown;
   try { body = await request.json(); } catch { return apiError(400, 'INVALID_JSON', 'Request body must be valid JSON.'); }

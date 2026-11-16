@@ -5,8 +5,10 @@ type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 
 export function enforceRateLimit(request: NextRequest, namespace: string, limit: number, windowMs: number) {
-  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  const ip = forwarded || request.headers.get('x-real-ip') || 'unknown';
+  // Only enable behind a proxy that replaces client-supplied forwarding headers.
+  const trusted = process.env.TRUST_PROXY_HEADERS === 'true';
+  const forwarded = trusted ? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() : undefined;
+  const ip = (forwarded || (trusted ? request.headers.get('x-real-ip') : undefined) || 'unknown').slice(0, 128);
   const key = `${namespace}:${ip}`;
   const now = Date.now();
   const current = buckets.get(key);

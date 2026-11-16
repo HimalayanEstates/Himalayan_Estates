@@ -17,6 +17,10 @@ function corsHeaders(origin: string | null) {
 export function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const headers = corsHeaders(origin);
+  const protectedMutation = !['GET', 'HEAD', 'OPTIONS'].includes(request.method) && /^\/api\/v1\/(admin|auth)(\/|$)/.test(request.nextUrl.pathname);
+  if (protectedMutation && origin && origin !== allowedOrigin && origin !== request.nextUrl.origin) {
+    return NextResponse.json({ error: { code: 'ORIGIN_FORBIDDEN', message: 'This origin is not allowed.' } }, { status: 403, headers });
+  }
   if (request.method === 'OPTIONS') return new NextResponse(null, { status: 204, headers });
   const response = NextResponse.next();
   headers.forEach((value, key) => response.headers.set(key, value));

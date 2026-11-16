@@ -14,5 +14,6 @@ export const inquirySchema = z.object({
   utmMedium: z.string().trim().max(100).optional(),
   utmCampaign: z.string().trim().max(100).optional(),
 }).superRefine((value, context) => {
-  if (!value.email && !value.phone) context.addIssue({ code: z.ZodIssueCode.custom, path: ['email'], message: 'Email or phone is required.' });
+  if (value.preferredContact === 'EMAIL' && !value.email) context.addIssue({ code: z.ZodIssueCode.custom, path: ['email'], message: 'Email is required for email contact.' });
+  if (value.preferredContact !== 'EMAIL' && !value.phone) context.addIssue({ code: z.ZodIssueCode.custom, path: ['phone'], message: 'Phone number is required for phone or WhatsApp contact.' });
 });

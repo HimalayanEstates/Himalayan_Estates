@@ -1,10 +1,14 @@
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1').replace(/\/$/, '');
+export const API_BASE_URL = (typeof window === 'undefined'
+  ? `${(process.env.BACKEND_ORIGIN || 'http://localhost:4000').replace(/\/$/, '')}/api/v1`
+  : '/api/v1');
 
 export type ApiMedia = {
   deliveryUrl: string;
   altText: string;
   isCover: boolean;
   moderationState: string;
+  caption?: string | null;
+  mediaType?: string;
 };
 
 export type ApiProperty = {

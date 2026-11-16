@@ -1,0 +1,29 @@
+.manali-location { padding: 24px 6% 48px; }
+.manali-location-heading { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 32px; }
+.manali-location-heading h2 { font-size: clamp(32px, 3.6vw, 48px); }
+.manali-location-heading>p { max-width: 365px; font-size: 13px; line-height: 1.8; }
+.manali-location-layout { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(280px, 1fr); gap: 28px; align-items: stretch; }
+.manali-map-frame { position: relative; min-width: 0; min-height: 470px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); isolation: isolate; }
+.manali-map { position: absolute; inset: 0; height: 100%; width: 100%; z-index: 0; font-family: var(--font-sans), sans-serif; }
+.manali-map-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 12px; color: var(--muted); }
+.manali-map-reset { position: absolute; bottom: 28px; left: 16px; z-index: 1; border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; color: var(--pine); background: var(--paper); font-size: 11px; box-shadow: 0 4px 16px oklch(20% .03 150 / .12); }
+.manali-map .leaflet-control-attribution { font-size: 9px; }
+.manali-map .leaflet-control-zoom a { color: var(--pine); }
+.manali-map-pin { border-radius: 50%; background: var(--pine); color: var(--paper); border: 2px solid var(--paper); box-shadow: 0 3px 10px oklch(18% .03 150 / .3); display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+.manali-map-pin.is-selected { background: var(--gold); color: var(--deep); }
+.manali-landmarks { display: grid; align-content: start; gap: 12px; }
+.manali-landmarks-label { font-size: 9px; letter-spacing: .16em; color: var(--muted); margin-bottom: 2px; }
+.manali-landmark { border: 1px solid var(--line); background: var(--panel); padding: 18px 20px; border-radius: 8px; }
+.manali-landmark.is-selected { border-color: var(--gold); background: var(--paper); }
+.manali-landmark-button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; text-align: left; background: transparent; border: 0; color: var(--pine); }
+.manali-landmark-button>span:nth-child(2) { flex: 1; }
+.manali-landmark-number { display: grid; place-items: center; min-width: 30px; height: 30px; border-radius: 50%; background: var(--line); color: var(--pine); font-size: 10px; }
+.manali-landmark-button small { display: block; font-size: 8px; letter-spacing: .1em; color: var(--muted); margin-bottom: 5px; }
+.manali-landmark-button strong { font-family: var(--font-display), Georgia, serif; font-size: 22px; line-height: 1.15; font-weight: 600; }
+.manali-landmark>p { font-size: 11px; margin-top: 12px; line-height: 1.7; }
+.manali-landmark>a { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; color: var(--pine); text-decoration: underline; text-underline-offset: 3px; padding: 8px 0 0; }
+.manali-location-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 18px; font-size: 10px; max-width: 850px; line-height: 1.7; }
+.manali-location-note svg { flex-shrink: 0; margin-top: 2px; }
+.manali-map-error { font-size: 12px; margin-top: 16px; }
+@media(max-width: 900px) { .manali-location-layout { grid-template-columns: 1fr; } .manali-location-heading { align-items: flex-start; flex-direction: column; gap: 18px; } .manali-location-heading>p { max-width: 540px; } .manali-landmarks { grid-template-columns: repeat(3, minmax(0, 1fr)); } .manali-landmarks-label { grid-column: 1 / -1; } .manali-landmark { padding: 16px; } .manali-landmark-button { flex-wrap: wrap; } .manali-landmark-button>svg { display: none; } }
+@media(max-width: 600px) { .manali-map-frame { min-height: 390px; } .manali-landmarks { grid-template-columns: 1fr; } .manali-landmark-button { flex-wrap: nowrap; } .manali-location { padding-top: 12px; padding-bottom: 32px; } }

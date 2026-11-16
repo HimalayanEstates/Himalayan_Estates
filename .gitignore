@@ -6,3 +6,7 @@ node_modules/
 coverage/
 prisma/.cache/
 *.tsbuildinfo
+.next-check/
+strix_runs/
+frontend/reports/
+stitch_manali_luxury_real_estate.zip

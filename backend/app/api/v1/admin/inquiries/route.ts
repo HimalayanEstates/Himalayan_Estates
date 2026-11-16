@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { serializeForJson } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   const params = request.nextUrl.searchParams;
   const page = parsePositiveInt(params.get('page'), 1, 10000);

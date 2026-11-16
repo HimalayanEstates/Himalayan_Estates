@@ -7,14 +7,14 @@ import { contentSchema } from '@/lib/cms-validation';
 import { serializeForJson } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   const content = await db.siteContent.findMany({ orderBy: { contentKey: 'asc' } });
   return apiSuccess({ content: serializeForJson(content) });
 }
 
 export async function PUT(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   let body: unknown;
   try { body = await request.json(); } catch { return apiError(400, 'INVALID_JSON', 'Request body must be valid JSON.'); }

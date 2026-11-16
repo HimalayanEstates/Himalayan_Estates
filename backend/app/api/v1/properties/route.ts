@@ -2,6 +2,9 @@ import { PropertyCategory, PropertyPurpose, ListingStatus, VerificationStatus } 
 import { NextRequest } from 'next/server';
 import { apiError, apiSuccess, parseOptionalNonNegativeBigInt, parsePositiveInt } from '@/lib/api';
 import { db } from '@/lib/db';
+import { publicProperty } from '@/lib/public-property';
+import { unstable_cache } from 'next/cache';
+import { serializeForJson } from '@/lib/serialize';
 
 const categoryValues = new Set(Object.values(PropertyCategory));
 const purposeValues = new Set(Object.values(PropertyPurpose));
@@ -18,6 +21,7 @@ export async function GET(request: NextRequest) {
   const query = params.get('q')?.trim();
   const city = params.get('city')?.trim();
   const locality = params.get('locality')?.trim();
+  const includeTotal = params.get('includeTotal') !== 'false';
 
   if (category && !categoryValues.has(category as PropertyCategory)) return apiError(400, 'INVALID_CATEGORY', 'Unknown property category.');
   if (purpose && !purposeValues.has(purpose as PropertyPurpose)) return apiError(400, 'INVALID_PURPOSE', 'Unknown property purpose.');
@@ -41,12 +45,36 @@ export async function GET(request: NextRequest) {
   const orderBy = sort === 'price_asc' ? { priceMinor: 'asc' as const } : sort === 'price_desc' ? { priceMinor: 'desc' as const } : { publishedAt: 'desc' as const };
 
   try {
-    const [items, total] = await db.$transaction([
-      db.property.findMany({ where, orderBy, skip: (page - 1) * pageSize, take: pageSize, include: { media: { where: { isCover: true, moderationState: 'APPROVED' }, take: 1 } } }),
-      db.property.count({ where }),
-    ]);
+    const load = unstable_cache(async () => serializeForJson(await Promise.all([
+      db.property.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true, slug: true, title: true, category: true, purpose: true, description: true,
+          priceMode: true, priceMinor: true, priceMaxMinor: true, currency: true,
+          areaValue: true, areaUnit: true, locality: true, city: true, region: true,
+          address: true, latitude: true, longitude: true, publicLocationPrecise: true,
+          amenities: true, verificationStatus: true, seoTitle: true, seoDescription: true,
+          media: {
+            where: { isCover: true, moderationState: 'APPROVED' },
+            orderBy: { displayOrder: 'asc' },
+            take: 1,
+            select: { id: true, deliveryUrl: true, mediaType: true, altText: true, caption: true, isCover: true, displayOrder: true, moderationState: true },
+          },
+        },
+      }),
+      includeTotal ? db.property.count({ where }) : Promise.resolve(null),
+    ])), ['public-properties', request.nextUrl.search], { revalidate: 10 });
+    const [items, total] = await load();
 
-    return apiSuccess({ items: items.map((property) => ({ ...property, priceMinor: property.priceMinor?.toString() ?? null, priceMaxMinor: property.priceMaxMinor?.toString() ?? null, latitude: property.publicLocationPrecise ? property.latitude : null, longitude: property.publicLocationPrecise ? property.longitude : null })), pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize), hasMore: page * pageSize < total }, filters: { q: query ?? null, category: category ?? null, purpose: purpose ?? null, city: city ?? null, locality: locality ?? null, verified } });
+    const visibleTotal = total ?? items.length;
+    const totalPages = total === null ? 1 : Math.ceil(total / pageSize);
+    const response = apiSuccess({ items: items.map(publicProperty), pagination: { page, pageSize, total: visibleTotal, totalPages, hasMore: total === null ? items.length === pageSize : page * pageSize < total }, filters: { q: query ?? null, category: category ?? null, purpose: purpose ?? null, city: city ?? null, locality: locality ?? null, verified } }, {
+      headers: { 'Cache-Control': 'public, max-age=5, s-maxage=20, stale-while-revalidate=60' },
+    });
+    return response;
   } catch (error) {
     console.error('properties.list_failed', error);
     return apiError(500, 'INTERNAL_ERROR', 'Properties could not be loaded.');

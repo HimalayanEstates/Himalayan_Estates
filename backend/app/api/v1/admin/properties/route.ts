@@ -7,7 +7,7 @@ import { propertyCreateData, propertyInputSchema } from '@/lib/property-validati
 import { serializeForJson } from '@/lib/serialize';
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   const params = request.nextUrl.searchParams;
   const page = parsePositiveInt(params.get('page'), 1, 10000);
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = await requireAdmin(request);
   if (unauthorized) return unauthorized;
   let body: unknown;
   try { body = await request.json(); } catch { return apiError(400, 'INVALID_JSON', 'Request body must be valid JSON.'); }

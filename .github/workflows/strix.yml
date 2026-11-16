@@ -1,0 +1,55 @@
+name: Strix pentest
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pentest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      STRIX_LLM: ${{ secrets.STRIX_LLM }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_API_BASE: ${{ secrets.LLM_API_BASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check configuration
+        run: |
+          test -n "$STRIX_LLM" || { echo 'Configure STRIX_LLM in repository secrets.'; exit 1; }
+          test -n "$LLM_API_KEY" || { echo 'Configure LLM_API_KEY in repository secrets.'; exit 1; }
+          docker info >/dev/null
+      - name: Install pinned Strix CLI
+        run: pip install strix-agent==1.7.0
+      - name: Scan source
+        run: >-
+          strix -n -t . --scan-mode quick --scope-mode full --max-budget 1 --max-turns 30
+          --instruction 'Audit supplied source only. Use local synthetic fixtures. Do not contact production services or external targets. Report coverage limitations.'
+      - name: Require completed scan with budget headroom
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          runs = list(Path('strix_runs').glob('*/run.json'))
+          if not runs:
+              raise SystemExit('No scan metadata: security gate failed.')
+          for path in runs:
+              run = json.loads(path.read_text())
+              if run.get('status') != 'completed':
+                  raise SystemExit('Scan did not complete: ' + str(run.get('status')))
+              cost = run.get('llm_usage', {}).get('cost')
+              if cost is None or float(cost) >= 0.9:
+                  raise SystemExit('Missing cost data or insufficient budget headroom; review coverage before accepting.')
+          PY
+      - name: Retain scan evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strix-evidence
+          path: strix_runs/
+          if-no-files-found: warn

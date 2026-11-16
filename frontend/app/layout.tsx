@@ -1,30 +1,37 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Manrope } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
+import MotionReveal from '@/components/MotionReveal';
+import PageTransition from '@/components/PageTransition';
+import { SiteDataProvider } from '@/lib/site-data';
 
-const display = Cormorant_Garamond({
-  subsets: ['latin'],
+const display = localFont({
+  src: './fonts/CormorantGaramond.ttf',
   variable: '--font-display',
-  weight: ['500', '600', '700'],
+  weight: '500 700',
   display: 'swap',
 });
 
-const sans = Manrope({
-  subsets: ['latin'],
+const sans = localFont({
+  src: './fonts/Manrope.ttf',
   variable: '--font-sans',
-  weight: ['400', '500', '600', '700'],
+  weight: '400 700',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Himalayan Estates | Places with a point of view',
-  description: 'Curated hotels, land, homes and commercial property across the Himalayas.',
+  description: 'Curated hotels, land, homes and commercial property in Manali, Himachal Pradesh.',
+  icons: {
+    icon: { url: '/favicon.png', type: 'image/png' },
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable}`}>{children}</body>
+      <body className={`${display.variable} ${sans.variable}`}><SiteDataProvider><a className="skip-link" href="#main-content">Skip to content</a><PageTransition>{children}</PageTransition><MotionReveal /></SiteDataProvider></body>
     </html>
   );
 }
